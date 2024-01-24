@@ -4,8 +4,9 @@ from random import choice as rc
 
 from faker import Faker
 
+from database import db
 from app import app
-from models import db, Zookeeper, Animal, Enclosure
+from models import Zookeeper, Animal, Enclosure
 
 fake = Faker()
 
@@ -22,6 +23,7 @@ with app.app_context():
         zookeepers.append(zk)
 
     db.session.add_all(zookeepers)
+    db.session.commit()  # Commit zookeepers to the database to get their IDs
 
     enclosures = []
     environments = ['Desert', 'Pond', 'Ocean', 'Field', 'Trees', 'Cave', 'Cage']
@@ -31,6 +33,7 @@ with app.app_context():
         enclosures.append(e)
 
     db.session.add_all(enclosures)
+    db.session.commit()  # Commit enclosures to the database to get their IDs
 
     animals = []
     species = ['Lion', 'Tiger', 'Bear', 'Hippo', 'Rhino', 'Elephant', 'Ostrich',
@@ -40,9 +43,13 @@ with app.app_context():
         name = fake.first_name()
         while name in [a.name for a in animals]:
             name=fake.first_name()
-        a = Animal(name=name, species=rc(species))
-        a.zookeeper = rc(zookeepers)
-        a.enclosure = rc(enclosures)
+            
+        # Get random zookeeper and enclosure objects from the database
+        random_zookeeper = rc(zookeepers)
+        random_enclosure = rc(enclosures)
+
+        # Create Animal with the obtained zookeeper and enclosure objects
+        a = Animal(name=name, species=rc(species), caretaker=random_zookeeper, habitat=random_enclosure)
         animals.append(a)
 
     db.session.add_all(animals)
